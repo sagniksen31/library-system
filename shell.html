@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Book Tracking System</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+
+    :root {
+      --bg:        #0d0f14;
+      --panel:     #12151c;
+      --border:    #1e2330;
+      --green:     #4ade80;
+      --green-dim: #1a4a2e;
+      --amber:     #fbbf24;
+      --blue:      #60a5fa;
+      --muted:     #4b5563;
+      --text:      #e2e8f0;
+      --cursor:    #4ade80;
+      --scanline:  rgba(0,0,0,0.06);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    .wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 48px;
+    }
+
+    /* ── Header ───────────────────────────────────────── */
+    header {
+      width: 100%;
+      max-width: 860px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: var(--green-dim);
+      border: 1px solid var(--green);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+
+    header h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(18px, 3vw, 26px);
+      color: var(--green);
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      margin-left: auto;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--amber);
+      border: 1px solid var(--amber);
+      border-radius: 4px;
+      padding: 3px 8px;
+      flex-shrink: 0;
+    }
+
+    /* ── Terminal container ───────────────────────────── */
+    .terminal-wrap {
+      width: 100%;
+      max-width: 860px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(74,222,128,0.06), 0 24px 80px rgba(0,0,0,0.6);
+    }
+
+    /* ── Title bar ────────────────────────────────────── */
+    .titlebar {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot { width:12px; height:12px; border-radius:50%; }
+    .dot.r { background:#ff5f57; }
+    .dot.y { background:#ffbd2e; }
+    .dot.g { background:#28c840; }
+
+    .titlebar-label {
+      margin-left: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    .titlebar-right {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* ── Output screen ────────────────────────────────── */
+    .screen {
+      background: #0a0c10;
+      padding: 18px 20px;
+      min-height: 360px;
+      max-height: 520px;
+      overflow-y: auto;
+      position: relative;
+      /* scanline effect */
+      background-image: repeating-linear-gradient(
+        0deg,
+        var(--scanline) 0px,
+        var(--scanline) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    }
+
+    #output {
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--green);
+      font-size: 13px;
+      line-height: 1.6;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Input row ────────────────────────────────────── */
+    .input-row {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .prompt-label {
+      padding: 12px 4px 12px 16px;
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 700;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    #input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--amber);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 8px;
+      caret-color: var(--cursor);
+    }
+
+    #input::placeholder { color: var(--muted); }
+
+    .send-btn {
+      padding: 8px 20px;
+      margin: 6px 10px;
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover {
+      background: rgba(74,222,128,0.2);
+      box-shadow: 0 0 10px rgba(74,222,128,0.3);
+    }
+    .send-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* ── Status bar ───────────────────────────────────── */
+    .statusbar {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 6px 16px;
+      display: flex;
+      gap: 24px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .statusbar span b { color: var(--text); }
+
+    /* ── Info cards below terminal ────────────────────── */
+    .cards {
+      width: 100%;
+      max-width: 860px;
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    .card h3 {
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .card code {
+      background: rgba(255,255,255,0.05);
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: var(--blue);
+      font-size: 11px;
+    }
+
+    /* ── Loading spinner ──────────────────────────────── */
+    #loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10,12,16,0.9);
+      z-index: 10;
+      gap: 12px;
+      transition: opacity 0.3s;
+    }
+
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading p { font-size: 12px; color: var(--muted); }
+
+    /* ── Scrollbar ────────────────────────────────────── */
+    .screen::-webkit-scrollbar { width: 6px; }
+    .screen::-webkit-scrollbar-track { background: transparent; }
+    .screen::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Cursor blink ─────────────────────────────────── */
+    .cursor-blink::after {
+      content: '█';
+      color: var(--cursor);
+      animation: blink 1s step-end infinite;
+      font-size: 13px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo-icon">📚</div>
+    <div>
+      <h1>Library Book Tracking System</h1>
+      <p>C → WebAssembly · Emscripten · University Assignment</p>
+    </div>
+    <div class="badge">WASM</div>
+  </header>
+
+  <div class="terminal-wrap">
+
+    <!-- Title bar -->
+    <div class="titlebar">
+      <div class="dot r"></div>
+      <div class="dot y"></div>
+      <div class="dot g"></div>
+      <span class="titlebar-label">library_system — bash</span>
+      <span class="titlebar-right" id="clock"></span>
+    </div>
+
+    <!-- Screen -->
+    <div class="screen" id="screen">
+      <div id="loading">
+        <div class="spinner"></div>
+        <p>Compiling WebAssembly module…</p>
+      </div>
+      <div id="output"></div>
+    </div>
+
+    <!-- Input row -->
+    <div class="input-row">
+      <span class="prompt-label">$&gt;</span>
+      <input id="input" type="text" autocomplete="off"
+             placeholder="Type input and press Enter…" disabled />
+      <button class="send-btn" id="sendBtn" disabled>SEND</button>
+    </div>
+
+    <!-- Status bar -->
+    <div class="statusbar">
+      <span>Status: <b id="statusText">Loading…</b></span>
+      <span>File: <b>library.dat (MEMFS)</b></span>
+      <span>Max Books: <b>100</b></span>
+    </div>
+
+  </div>
+
+  <!-- Info cards -->
+  <div class="cards">
+    <div class="card">
+      <h3>Compile Command</h3>
+      <p>
+        <code>emcc main.c -o index.html \</code><br>
+        <code>&nbsp;&nbsp;-s FORCE_FILESYSTEM=1 \</code><br>
+        <code>&nbsp;&nbsp;-s ASYNCIFY \</code><br>
+        <code>&nbsp;&nbsp;--shell-file shell.html</code>
+      </p>
+    </div>
+    <div class="card">
+      <h3>File Handling in WASM</h3>
+      <p>
+        Emscripten provides a virtual <b>MEMFS</b> in the browser.
+        <code>fopen/fprintf/fscanf</code> work normally.
+        Data persists until page reload.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Input Method</h3>
+      <p>
+        Uses <code>setbuf(stdout,NULL)</code> + Emscripten's
+        <code>ASYNCIFY</code> flag for synchronous
+        <code>scanf</code>-style blocking input in the browser.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Features</h3>
+      <p>
+        Add · Issue · Return · Search · List Issued ·
+        Save/Load · Duplicate prevention · Case-insensitive search
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Emscripten module ────────────────────────────────── -->
+<script>
+const outputEl  = document.getElementById('output');
+const inputEl   = document.getElementById('input');
+const sendBtn   = document.getElementById('sendBtn');
+const loadingEl = document.getElementById('loading');
+const statusEl  = document.getElementById('statusText');
+const screenEl  = document.getElementById('screen');
+const clockEl   = document.getElementById('clock');
+
+/* clock */
+setInterval(()=>{
+  clockEl.textContent=new Date().toLocaleTimeString();
+},1000);
+
+function appendOutput(text){
+  outputEl.textContent+=text;
+  screenEl.scrollTop=screenEl.scrollHeight;
+}
+
+function setReady(){
+  loadingEl.style.display="none";
+  inputEl.disabled=false;
+  sendBtn.disabled=false;
+  statusEl.textContent="Running";
+  inputEl.focus();
+}
+
+/* stdin buffer */
+let stdinBuffer=[];
+
+/* push text into buffer */
+function enqueueInput(text){
+  const line=text+"\n";
+  for(let i=0;i<line.length;i++){
+    stdinBuffer.push(line.charCodeAt(i));
+  }
+}
+
+/* send button */
+function handleSend(){
+  const val=inputEl.value;
+  appendOutput(val+"\n");
+  enqueueInput(val);
+  inputEl.value="";
+}
+
+sendBtn.addEventListener("click",handleSend);
+
+inputEl.addEventListener("keydown",(e)=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+/* EMSCRIPTEN MODULE */
+var Module={
+  print:function(text){
+    appendOutput(text+"\n");
+  },
+
+  printErr:function(text){
+    appendOutput("[ERR] "+text+"\n");
+  },
+
+  onRuntimeInitialized:function(){
+    setReady();
+  }
+};
+
+/* connect stdin to WASM */
+Module['preRun']=function(){
+
+  FS.init(
+
+    function stdin(){
+      if(stdinBuffer.length===0){
+        return null;
+      }
+      return stdinBuffer.shift();
+    },
+
+    function stdout(c){
+      appendOutput(String.fromCharCode(c));
+    },
+
+    function stderr(c){
+      appendOutput(String.fromCharCode(c));
+    }
+
+  );
+
+};
+</script>
+
+<!--
+  IMPORTANT:
+  When compiled with emcc the generated index.js is inserted here
+  automatically by Emscripten's --shell-file mechanism.
+  The placeholder below is replaced by emcc:
+-->
+{{{ SCRIPT }}}
+
+</body>
+</html>
