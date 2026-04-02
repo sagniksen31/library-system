@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Expense & Budget Tracker — C++ OOP compiled to WebAssembly with Emscripten." />
+    <title>Expense & Budget Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* ── Reset & Variables ──────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #09090b;
+            --surface: #0f1117;
+            --surface-2: #151820;
+            --surface-3: #1a1d28;
+            --border: #1e2230;
+            --border-focus: #4c3aad;
+            --accent: #a78bfa;
+            --accent-dim: #2a1f5e;
+            --accent-glow: rgba(167, 139, 250, 0.10);
+            --teal: #2dd4bf;
+            --teal-dim: #0d3d38;
+            --amber: #fbbf24;
+            --rose: #fb7185;
+            --green: #4ade80;
+            --blue: #60a5fa;
+            --muted: #3f4553;
+            --text: #e2e8f0;
+            --text-dim: #8892a4;
+            --radius: 10px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ── Page Layout ───────────────────────────────────── */
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px 40px;
+            background-image:
+                radial-gradient(ellipse 70% 40% at 50% -10%, rgba(167, 139, 250, 0.05), transparent);
+        }
+
+        /* ── Header ────────────────────────────────────────── */
+        .header {
+            width: 100%;
+            max-width: 1060px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(167, 139, 250, 0.35);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 0 24px var(--accent-glow);
+        }
+
+        .header h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(16px, 2.5vw, 22px);
+            color: var(--accent);
+            letter-spacing: -0.4px;
+        }
+
+        .header .sub {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 1px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .badges {
+            margin-left: auto;
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .badge {
+            font-size: 9px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            font-weight: 600;
+            border-radius: 4px;
+            padding: 3px 7px;
+        }
+
+        .badge-w {
+            color: var(--teal);
+            border: 1px solid rgba(45, 212, 191, 0.35);
+        }
+
+        .badge-c {
+            color: var(--blue);
+            border: 1px solid rgba(96, 165, 250, 0.35);
+        }
+
+        /* ── Dashboard Section ─────────────────────────────── */
+        .dashboard {
+            width: 100%;
+            max-width: 1060px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+        }
+
+        .card h2 {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .card h2 .ico {
+            font-size: 15px;
+        }
+
+        /* ── Form Elements ─────────────────────────────────── */
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .field label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .field input {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 8px 11px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 12.5px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .field input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .field input::placeholder {
+            color: var(--muted);
+        }
+
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* ── Buttons ───────────────────────────────────────── */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 7px;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.12s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #0b0d12;
+            border-color: var(--accent);
+            width: 100%;
+            justify-content: center;
+            margin-top: 4px;
+        }
+
+        .btn-primary:hover {
+            background: #b89dfc;
+            box-shadow: 0 0 16px rgba(167, 139, 250, 0.25);
+        }
+
+        .btn-teal {
+            background: var(--teal-dim);
+            color: var(--teal);
+            border-color: rgba(45, 212, 191, 0.3);
+            width: 100%;
+            justify-content: center;
+            margin-top: 4px;
+        }
+
+        .btn-teal:hover {
+            background: rgba(45, 212, 191, 0.12);
+            box-shadow: 0 0 12px rgba(45, 212, 191, 0.12);
+        }
+
+        .btn-sm {
+            background: var(--surface-2);
+            color: var(--text-dim);
+            border-color: var(--border);
+            width: 100%;
+            justify-content: center;
+            margin-top: 4px;
+        }
+
+        .btn-sm:hover {
+            background: var(--surface-3);
+            color: var(--text);
+            border-color: #2a2d3a;
+        }
+
+        /* ── Quick Actions ─────────────────────────────────── */
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        /* ── Form Section Dividers ──────────────────────────── */
+        .form-section {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            background: var(--surface-3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 7px;
+            margin-bottom: 8px;
+        }
+
+        .section-tag.tag-input {
+            color: var(--amber);
+            border-color: rgba(251, 191, 36, 0.2);
+        }
+
+        .act-btn {
+            padding: 10px 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 10.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .act-btn .act-ico {
+            font-size: 17px;
+        }
+
+        .act-btn .act-lbl {
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .act-btn:hover {
+            border-color: var(--accent-dim);
+            background: var(--surface-2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .act-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ── Terminal Section ───────────────────────────────── */
+        .terminal-section {
+            width: 100%;
+            max-width: 1060px;
+        }
+
+        .term-wrap {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(167, 139, 250, 0.04), 0 16px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .term-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .dt {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dt-r {
+            background: #ff5f57;
+        }
+
+        .dt-y {
+            background: #ffbd2e;
+        }
+
+        .dt-g {
+            background: #28c840;
+        }
+
+        .term-title {
+            margin-left: 6px;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.3px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .term-clock {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .screen {
+            background: #07080c;
+            padding: 14px 16px;
+            height: 380px;
+            overflow-y: auto;
+            position: relative;
+            font-family: 'JetBrains Mono', monospace;
+            background-image: repeating-linear-gradient(0deg,
+                    rgba(0, 0, 0, 0.04) 0px, rgba(0, 0, 0, 0.04) 1px,
+                    transparent 1px, transparent 3px);
+        }
+
+        #output {
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--accent);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .input-bar {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+        }
+
+        .prompt {
+            padding: 10px 4px 10px 14px;
+            color: var(--teal);
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        #input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--amber);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+            padding: 10px 6px;
+            caret-color: var(--accent);
+        }
+
+        #input::placeholder {
+            color: var(--muted);
+        }
+
+        .send-btn {
+            padding: 6px 16px;
+            margin: 5px 8px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(167, 139, 250, 0.4);
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.12s, box-shadow 0.12s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background: rgba(167, 139, 250, 0.18);
+            box-shadow: 0 0 10px rgba(167, 139, 250, 0.2);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .status-bar {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 5px 14px;
+            display: flex;
+            gap: 20px;
+            font-size: 10px;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-bar b {
+            color: var(--text-dim);
+        }
+
+        /* ── Loading ───────────────────────────────────────── */
+        #loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(7, 8, 12, 0.92);
+            z-index: 10;
+            gap: 12px;
+            transition: opacity 0.4s;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loading p {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        /* ── Scrollbar ─────────────────────────────────────── */
+        .screen::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .screen::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .screen::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        /* ── Toast ──────────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--surface-2);
+            border: 1px solid var(--accent-dim);
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ── Validation Error Box ───────────────────────────── */
+        .error-box {
+            display: none;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 6px;
+            padding: 9px 12px;
+            background: rgba(251, 113, 133, 0.08);
+            border: 1px solid rgba(251, 113, 133, 0.35);
+            border-radius: 7px;
+            animation: errSlide 0.18s ease;
+        }
+
+        @keyframes errSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-box.visible {
+            display: flex;
+        }
+
+        .error-box .err-icon {
+            font-size: 13px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .error-box .err-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .error-box .err-list li {
+            font-size: 11px;
+            color: var(--rose);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        /* Red outline on invalid fields */
+        .field input.invalid {
+            border-color: rgba(251, 113, 133, 0.6);
+            box-shadow: 0 0 0 2px rgba(251, 113, 133, 0.12);
+        }
+
+        /* ── Footer ────────────────────────────────────────── */
+        .footer {
+            width: 100%;
+            max-width: 1060px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        /* ── Responsive ────────────────────────────────────── */
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                grid-template-columns: repeat(3, 1fr);
+                /* already 3-col, stays the same */
+            }
+
+            .header {
+                flex-wrap: wrap;
+            }
+
+            .badges {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .actions {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .row-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- ── Header ──────────────────────────────────────── -->
+        <div class="header">
+            <div class="logo">💰</div>
+            <div>
+                <h1>Expense & Budget Tracker</h1>
+                <p class="sub">C++ OOP → WebAssembly · Emscripten</p>
+            </div>
+            <div class="badges">
+                <span class="badge badge-w">WASM</span>
+                <span class="badge badge-c">C++ OOP</span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!--          DASHBOARD — always visible (top)          -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="dashboard">
+
+            <!-- ── Add Expense Card ────────────────────────── -->
+            <div class="card">
+                <h2><span class="ico">➕</span> Add Expense</h2>
+                <div class="field">
+                    <label for="expDesc">Description</label>
+                    <input type="text" id="expDesc" placeholder="e.g. Lunch" />
+                </div>
+                <div class="row-2">
+                    <div class="field">
+                        <label for="expCat">Category</label>
+                        <input type="text" id="expCat" placeholder="e.g. Food" />
+                    </div>
+                    <div class="field">
+                        <label for="expAmt">Amount</label>
+                        <input type="number" id="expAmt" placeholder="250" min="0.01" step="0.01" />
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="expDate">Date</label>
+                    <input type="date" id="expDate" />
+                </div>
+                <div class="error-box" id="expError">
+                    <span class="err-icon">⚠️</span>
+                    <ul class="err-list" id="expErrorList"></ul>
+                </div>
+                <button class="btn btn-primary" onclick="dashAddExpense()">➕ Add Expense</button>
+            </div>
+
+            <!-- ── Set Budget + Search Card ────────────────── -->
+            <div class="card">
+                <h2><span class="ico">🎯</span> Set Budget</h2>
+                <div class="field">
+                    <label for="budCat">Category</label>
+                    <input type="text" id="budCat" placeholder="e.g. Food" />
+                </div>
+                <div class="field">
+                    <label for="budLim">Monthly Limit</label>
+                    <input type="number" id="budLim" placeholder="5000" min="0.01" step="0.01" />
+                </div>
+                <button class="btn btn-teal" onclick="dashSetBudget()">🎯 Set Budget</button>
+                <div class="error-box" id="budError">
+                    <span class="err-icon">⚠️</span>
+                    <ul class="err-list" id="budErrorList"></ul>
+                </div>
+
+                <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
+                    <h2><span class="ico">🔍</span> Search</h2>
+                    <div class="field">
+                        <label for="searchKey">Keyword</label>
+                        <input type="text" id="searchKey" placeholder="food, lunch..." />
+                    </div>
+                    <button class="btn btn-sm" onclick="dashSearch()">🔍 Search</button>
+                    <div class="error-box" id="searchError">
+                        <span class="err-icon">⚠️</span>
+                        <ul class="err-list" id="searchErrorList"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Quick Actions + Form Actions Card ──────── -->
+            <div class="card">
+
+                <!-- One-click actions: no input needed -->
+                <h2><span class="ico">⚡</span> Quick Actions</h2>
+                <span class="section-tag">No input required</span>
+                <div class="actions">
+                    <button class="act-btn" onclick="dashQuick('2')">
+                        <span class="act-ico">📋</span>
+                        <span class="act-lbl">View All</span>
+                    </button>
+                    <button class="act-btn" onclick="dashBudgetReport()">
+                        <span class="act-ico">📊</span>
+                        <span class="act-lbl">Budget</span>
+                    </button>
+                    <button class="act-btn" onclick="dashQuick('8')">
+                        <span class="act-ico">💾</span>
+                        <span class="act-lbl">Save</span>
+                    </button>
+                </div>
+
+                <!-- Form actions: require user input -->
+                <div class="form-section">
+                    <h2><span class="ico">📂</span> Filter by Category</h2>
+                    <div class="field">
+                        <label for="viewCat">Category Name</label>
+                        <input type="text" id="viewCat" placeholder="e.g. Food" />
+                    </div>
+                    <button class="btn btn-sm" onclick="dashViewCategoryField()">📂 Filter</button>
+                    <div class="error-box" id="viewCatError">
+                        <span class="err-icon">⚠️</span>
+                        <ul class="err-list" id="viewCatErrorList"></ul>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2><span class="ico">🗑️</span> Delete by ID</h2>
+                    <div class="field">
+                        <label for="delId">Expense ID</label>
+                        <input type="number" id="delId" placeholder="e.g. 1" min="1" />
+                    </div>
+                    <button class="btn btn-sm" onclick="dashDeleteField()">🗑️ Delete</button>
+                    <div class="error-box" id="delError">
+                        <span class="err-icon">⚠️</span>
+                        <ul class="err-list" id="delErrorList"></ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!--      TERMINAL — always visible below dashboard     -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div class="terminal-section">
+            <div class="term-wrap">
+                <div class="term-bar">
+                    <div class="dt dt-r"></div>
+                    <div class="dt dt-y"></div>
+                    <div class="dt dt-g"></div>
+                    <span class="term-title">expense_tracker — terminal</span>
+                    <span class="term-clock" id="clock"></span>
+                </div>
+
+                <div class="screen" id="screen">
+                    <div id="loading">
+                        <div class="spinner"></div>
+                        <p>Compiling WebAssembly module…</p>
+                    </div>
+                    <div id="output"></div>
+                </div>
+
+                <div class="input-bar">
+                    <span class="prompt">$&gt;</span>
+                    <input id="input" type="text" autocomplete="off" placeholder="Type command and press Enter…"
+                        disabled />
+                    <button class="send-btn" id="sendBtn" disabled>SEND</button>
+                </div>
+
+                <div class="status-bar">
+                    <span>Status: <b id="statusText">Loading…</b></span>
+                    <span>Storage: <b>MEMFS</b></span>
+                    <span>Expenses: <b>200 max</b></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+        <div class="footer">Built with C++ OOP &amp; Emscripten · Runs entirely in your browser</div>
+
+    </div>
+
+    <!-- ── JavaScript ──────────────────────────────────────── -->
+    <script>
+        /* ── DOM References ───────────────────────────────── */
+        const outputEl = document.getElementById('output');
+        const inputEl = document.getElementById('input');
+        const sendBtn = document.getElementById('sendBtn');
+        const loadingEl = document.getElementById('loading');
+        const statusEl = document.getElementById('statusText');
+        const screenEl = document.getElementById('screen');
+        const clockEl = document.getElementById('clock');
+        const toastEl = document.getElementById('toast');
+
+        /* ── Clock ───────────────────────────────────────── */
+        setInterval(() => {
+            clockEl.textContent = new Date().toLocaleTimeString();
+        }, 1000);
+
+        /* ── Stdout Line Buffer ──────────────────────────── */
+        /*  FS.init's stdout fires per CHARACTER. Doing a DOM */
+        /*  update for every single char is expensive and     */
+        /*  causes visual flickering. This buffer collects    */
+        /*  characters and flushes to the DOM on newlines or  */
+        /*  after a short idle timeout — giving clean,        */
+        /*  instant line-by-line output.                      */
+        /* ─────────────────────────────────────────────────── */
+        let stdoutBuf = '';
+        let flushTimer = null;
+
+        function flushStdout() {
+            if (stdoutBuf.length > 0) {
+                outputEl.textContent += stdoutBuf;
+                stdoutBuf = '';
+                screenEl.scrollTop = screenEl.scrollHeight;
+            }
+            flushTimer = null;
+        }
+
+        function appendChar(ch) {
+            stdoutBuf += ch;
+            if (ch === '\n') {
+                /* Newline → flush immediately for instant feedback */
+                clearTimeout(flushTimer);
+                flushStdout();
+            } else if (!flushTimer) {
+                /* No newline yet → flush after 30ms idle
+                   (catches prompts like "Enter choice: " that
+                    don't end with \n) */
+                flushTimer = setTimeout(flushStdout, 30);
+            }
+        }
+
+        /* appendOutput — used by echo, Module.print, errors */
+        function appendOutput(text) {
+            outputEl.textContent += text;
+            requestAnimationFrame(() => {
+                screenEl.scrollTop = screenEl.scrollHeight;
+            });
+        }
+
+        /* ── Ready State ─────────────────────────────────── */
+        function setReady() {
+            loadingEl.style.opacity = '0';
+            setTimeout(() => { loadingEl.style.display = 'none'; }, 400);
+            inputEl.disabled = false;
+            sendBtn.disabled = false;
+            statusEl.textContent = 'Running';
+            statusEl.style.color = '#2dd4bf';
+        }
+
+        /* ═══════════════════════════════════════════════════ */
+        /*          CONTROLLED INPUT QUEUE SYSTEM              */
+        /*                                                     */
+        /*  WHY THE BUG HAPPENED:                              */
+        /*  ────────────────────                               */
+        /*  When all inputs were pushed to stdinBuffer at      */
+        /*  once (e.g. "1", "Lunch", "Food", "250", "date"),  */
+        /*  the C++ EM_ASYNC_JS(wait_for_input) found data     */
+        /*  immediately for EVERY fgets call. This means the   */
+        /*  WASM module ran synchronously through ALL prompts  */
+        /*  without EVER yielding to the browser:              */
+        /*                                                     */
+        /*    fgets("1")  → instant (buffer has data)          */
+        /*    printf("Description: ")                          */
+        /*    fgets(desc) → instant (buffer STILL has data)    */
+        /*    printf("Category: ")                             */
+        /*    fgets(cat)  → instant (buffer STILL has data)    */
+        /*    ... all in ONE synchronous burst                 */
+        /*                                                     */
+        /*  Since the browser can only repaint when WASM       */
+        /*  yields (returns to the event loop), ALL prompts    */
+        /*  and results appeared at once as a jumbled mess:    */
+        /*    "Description: Category: Amount: Date: [+] Done"  */
+        /*                                                     */
+        /*  HOW THE QUEUE FIXES IT:                            */
+        /*  ───────────────────────                            */
+        /*  Instead of flooding stdinBuffer, we feed ONE       */
+        /*  input at a time. After pushing one input:          */
+        /*                                                     */
+        /*    1. WASM reads it (within ~50ms poll cycle)       */
+        /*    2. WASM processes it, calls printf for prompt    */
+        /*    3. WASM hits next fgets → stdinBuffer is EMPTY   */
+        /*    4. wait_for_input does NOT resolve → WASM YIELDS */
+        /*    5. Browser REPAINTS → user sees the prompt       */
+        /*    6. After 200ms delay, we push the NEXT input     */
+        /*    7. Repeat until queue is empty                   */
+        /*                                                     */
+        /*  This guarantees each prompt appears on screen      */
+        /*  before its corresponding input is sent.            */
+        /* ═══════════════════════════════════════════════════ */
+
+        let stdinBuffer = [];
+        let inputQueue = [];     /* Pending inputs to send */
+        let isProcessing = false;  /* Lock: prevents overlap */
+
+        /* ── Push one line into the raw stdin buffer ──────── */
+        function enqueueInput(text) {
+            const line = text + '\n';
+            for (let i = 0; i < line.length; i++) {
+                stdinBuffer.push(line.charCodeAt(i));
+            }
+        }
+
+        /* ── processQueue: feeds inputs ONE AT A TIME ─────── */
+        /*  Called repeatedly by setTimeout until the queue    */
+        /*  is drained. Each call:                             */
+        /*    1. Shifts one input from the queue               */
+        /*    2. Echoes it in the terminal                     */
+        /*    3. Pushes it into stdinBuffer                    */
+        /*    4. Waits 200ms for WASM to consume + repaint     */
+        /*    5. Calls itself again for the next input         */
+        /* ─────────────────────────────────────────────────── */
+        function processQueue() {
+            if (inputQueue.length === 0) {
+                /* Queue drained — unlock and re-enable UI */
+                isProcessing = false;
+                inputEl.disabled = false;
+                sendBtn.disabled = false;
+                return;
+            }
+
+            /* Take the next input from the queue */
+            const item = inputQueue.shift();
+
+            /* Echo the input in the terminal so user can see
+               what value was sent to the C++ program */
+            appendOutput(item + '\n');
+
+            /* Push into stdinBuffer — WASM will pick it up
+               within the next 50ms poll cycle */
+            enqueueInput(item);
+
+            /* Wait 200ms before sending the next input.
+               This delay ensures:
+                 - WASM reads this input (~50ms)
+                 - WASM prints the next prompt via printf
+                 - WASM yields at the next empty fgets
+                 - Browser repaints the new prompt
+                 - THEN we send the next value
+               200ms is conservative but guarantees clean sync. */
+            setTimeout(processQueue, 200);
+        }
+
+        /* ═══════════════════════════════════════════════════ */
+        /*  sendSequence(inputs, label, toastMsg)              */
+        /*                                                     */
+        /*  The main entry point for all dashboard actions.    */
+        /*  Validates that no other sequence is running,       */
+        /*  echoes the action header, queues all inputs,       */
+        /*  and starts the controlled processing loop.         */
+        /* ═══════════════════════════════════════════════════ */
+        function sendSequence(inputs, label, toastMsg) {
+            /* Prevent overlapping actions */
+            if (isProcessing) {
+                showToast('Please wait — previous action in progress', '⏳');
+                return;
+            }
+
+            isProcessing = true;
+
+            /* Disable manual terminal input during queue processing
+               to prevent interference with queued inputs */
+            inputEl.disabled = true;
+            sendBtn.disabled = true;
+
+            /* Echo action header in terminal */
+            appendOutput('\n▸ ' + label + '\n');
+
+            /* Load inputs into the queue */
+            inputQueue = [...inputs];
+
+            /* Show toast */
+            if (toastMsg) showToast(toastMsg, '✅');
+
+            /* Start feeding inputs one at a time.
+               Use a small initial delay (100ms) to let the
+               echo text render before the first input arrives. */
+            setTimeout(processQueue, 100);
+        }
+
+        /* ── Terminal: Manual Input (Enter / SEND) ────────── */
+        function handleSend() {
+            /* Block manual input while queue is processing */
+            if (isProcessing) return;
+
+            const val = inputEl.value;
+
+            /* Block empty inputs — prevents menu re-print clutter */
+            if (val.trim() === '') {
+                inputEl.value = '';
+                return;
+            }
+
+            /* Echo and send immediately (single manual input) */
+            appendOutput(val + '\n');
+            enqueueInput(val);
+            inputEl.value = '';
+            inputEl.focus();
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); handleSend(); }
+        });
+
+        /* ═══════════════════════════════════════════════════ */
+        /*     FRONTEND VALIDATION HELPERS                      */
+        /* ═══════════════════════════════════════════════════ */
+
+        /**
+         * showErrors(boxId, listId, errors)
+         * Renders an array of error strings into the named
+         * error-box element and makes it visible.
+         */
+        function showErrors(boxId, listId, errors) {
+            const box = document.getElementById(boxId);
+            const list = document.getElementById(listId);
+            list.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+            box.classList.add('visible');
+        }
+
+        /**
+         * clearErrors(boxId, listId, ...inputIds)
+         * Hides the error box and removes the red-outline
+         * .invalid class from any supplied input elements.
+         */
+        function clearErrors(boxId, listId, ...inputIds) {
+            const box = document.getElementById(boxId);
+            const list = document.getElementById(listId);
+            if (!box) return;
+            box.classList.remove('visible');
+            list.innerHTML = '';
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('invalid');
+            });
+        }
+
+        /**
+         * markInvalid(id) — adds a red outline to a field
+         */
+        function markInvalid(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('invalid');
+        }
+
+        /**
+         * isPositiveNumber(val)
+         * Returns true only for finite numbers strictly > 0.
+         */
+        function isPositiveNumber(val) {
+            const n = parseFloat(val);
+            return !isNaN(n) && isFinite(n) && n > 0;
+        }
+
+        /**
+         * isValidDate(val)
+         * Accepts the native date-input value (YYYY-MM-DD).
+         * Returns true if the string represents a real calendar date.
+         */
+        function isValidDate(val) {
+            if (!val) return false;
+            const d = new Date(val);
+            return !isNaN(d.getTime());
+        }
+
+        /**
+         * formatDateForWasm(val)
+         * Converts YYYY-MM-DD (from <input type="date">) to
+         * DD-MM-YYYY as expected by the C++ back-end.
+         */
+        function formatDateForWasm(val) {
+            const [y, m, d] = val.split('-');
+            return `${d}-${m}-${y}`;
+        }
+
+        /* ── Auto-clear errors when user starts typing ────── */
+        /*  Wire up each input so that as soon as the user     */
+        /*  edits it, we strip the red outline and hide the    */
+        /*  error box for that section.                        */
+
+        /* Add Expense inputs */
+        ['expDesc', 'expCat', 'expAmt', 'expDate'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                clearErrors('expError', 'expErrorList',
+                    'expDesc', 'expCat', 'expAmt', 'expDate');
+            });
+        });
+
+        /* Set Budget inputs */
+        ['budCat', 'budLim'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                clearErrors('budError', 'budErrorList', 'budCat', 'budLim');
+            });
+        });
+
+        /* Search input */
+        document.getElementById('searchKey').addEventListener('input', () => {
+            clearErrors('searchError', 'searchErrorList', 'searchKey');
+        });
+
+        /* View by Category input */
+        document.getElementById('viewCat').addEventListener('input', () => {
+            clearErrors('viewCatError', 'viewCatErrorList', 'viewCat');
+        });
+
+        /* Delete input */
+        document.getElementById('delId').addEventListener('input', () => {
+            clearErrors('delError', 'delErrorList', 'delId');
+        });
+
+        /* ═══════════════════════════════════════════════════ */
+        /*     DASHBOARD → QUEUE BRIDGE FUNCTIONS              */
+        /*                                                     */
+        /*  Each function validates form fields, then calls    */
+        /*  sendSequence() which queues inputs and feeds them  */
+        /*  one-by-one with delays via processQueue().         */
+        /* ═══════════════════════════════════════════════════ */
+
+        /* 1. Add Expense: "1" → desc → cat → amt → date */
+        function dashAddExpense() {
+            const descEl = document.getElementById('expDesc');
+            const catEl = document.getElementById('expCat');
+            const amtEl = document.getElementById('expAmt');
+            const dateEl = document.getElementById('expDate');
+
+            const desc = descEl.value.trim();
+            const cat = catEl.value.trim();
+            const amt = amtEl.value.trim();
+            const date = dateEl.value.trim();
+
+            /* ── Validate ── */
+            const errors = [];
+
+            if (!desc) {
+                errors.push('Description is required.');
+                markInvalid('expDesc');
+            }
+            if (!cat) {
+                errors.push('Category is required.');
+                markInvalid('expCat');
+            }
+            if (!amt) {
+                errors.push('Amount is required.');
+                markInvalid('expAmt');
+            } else if (!isPositiveNumber(amt)) {
+                errors.push('Amount must be a positive number.');
+                markInvalid('expAmt');
+            }
+            if (!date) {
+                errors.push('Date is required.');
+                markInvalid('expDate');
+            } else if (!isValidDate(date)) {
+                errors.push('Date is not a valid calendar date.');
+                markInvalid('expDate');
+            }
+
+            if (errors.length > 0) {
+                showErrors('expError', 'expErrorList', errors);
+                return; /* ← block WASM call */
+            }
+
+            /* ── All clear: format date and send ── */
+            const wasmDate = formatDateForWasm(date);
+
+            sendSequence(
+                ['1', desc, cat, amt, wasmDate],
+                'Add Expense: ' + desc,
+                'Adding expense: ' + desc + ' (' + amt + ')'
+            );
+
+            /* Reset fields */
+            descEl.value = '';
+            catEl.value = '';
+            amtEl.value = '';
+            dateEl.value = '';
+            clearErrors('expError', 'expErrorList',
+                'expDesc', 'expCat', 'expAmt', 'expDate');
+        }
+
+        /* 4. Set Budget: "4" → cat → limit */
+        function dashSetBudget() {
+            const catEl = document.getElementById('budCat');
+            const limEl = document.getElementById('budLim');
+
+            const cat = catEl.value.trim();
+            const lim = limEl.value.trim();
+
+            /* ── Validate ── */
+            const errors = [];
+
+            if (!cat) {
+                errors.push('Category is required.');
+                markInvalid('budCat');
+            }
+            if (!lim) {
+                errors.push('Monthly limit is required.');
+                markInvalid('budLim');
+            } else if (!isPositiveNumber(lim)) {
+                errors.push('Monthly limit must be a positive number.');
+                markInvalid('budLim');
+            }
+
+            if (errors.length > 0) {
+                showErrors('budError', 'budErrorList', errors);
+                return;
+            }
+
+            sendSequence(
+                ['4', cat, lim],
+                'Set Budget: ' + cat + ' → ' + lim,
+                'Budget set: ' + cat + ' → ' + lim
+            );
+
+            catEl.value = '';
+            limEl.value = '';
+            clearErrors('budError', 'budErrorList', 'budCat', 'budLim');
+        }
+
+        /* 6. Search: "6" → keyword */
+        function dashSearch() {
+            const kwEl = document.getElementById('searchKey');
+            const kw = kwEl.value.trim();
+
+            if (!kw) {
+                showErrors('searchError', 'searchErrorList',
+                    ['Please enter a search keyword.']);
+                markInvalid('searchKey');
+                return;
+            }
+
+            sendSequence(['6', kw], 'Search: ' + kw, 'Searching: ' + kw);
+            kwEl.value = '';
+            clearErrors('searchError', 'searchErrorList', 'searchKey');
+        }
+
+        /* 3. View by Category (from field): "3" → cat */
+        function dashViewCategoryField() {
+            const catEl = document.getElementById('viewCat');
+            const cat = catEl.value.trim();
+
+            if (!cat) {
+                showErrors('viewCatError', 'viewCatErrorList',
+                    ['Please enter a category name.']);
+                markInvalid('viewCat');
+                return;
+            }
+
+            sendSequence(['3', cat], 'View Category: ' + cat, 'Filtering: ' + cat);
+            catEl.value = '';
+            clearErrors('viewCatError', 'viewCatErrorList', 'viewCat');
+        }
+
+        /* 3. View by Category (from prompt) */
+        function dashViewCategory() {
+            if (isProcessing) { showToast('Wait for current action', '⏳'); return; }
+            const cat = prompt('Enter category name:');
+            if (!cat || !cat.trim()) return;
+            sendSequence(['3', cat.trim()], 'View Category: ' + cat.trim(), 'Filtering: ' + cat.trim());
+        }
+
+        /* 7. Delete (from field): "7" → id */
+        function dashDeleteField() {
+            const idEl = document.getElementById('delId');
+            const id = idEl.value.trim();
+
+            const errors = [];
+
+            if (!id) {
+                errors.push('Expense ID is required.');
+                markInvalid('delId');
+            } else if (isNaN(parseInt(id, 10)) || parseInt(id, 10) < 1) {
+                errors.push('Expense ID must be a positive whole number.');
+                markInvalid('delId');
+            }
+
+            if (errors.length > 0) {
+                showErrors('delError', 'delErrorList', errors);
+                return;
+            }
+
+            sendSequence(['7', id], 'Delete Expense #' + id, 'Deleting #' + id);
+            idEl.value = '';
+            clearErrors('delError', 'delErrorList', 'delId');
+        }
+
+        /* 7. Delete (from prompt) */
+        function dashDeletePrompt() {
+            if (isProcessing) { showToast('Wait for current action', '⏳'); return; }
+            const id = prompt('Enter Expense ID to delete:');
+            if (!id || !id.trim()) return;
+            sendSequence(['7', id.trim()], 'Delete Expense #' + id.trim(), 'Deleting #' + id.trim());
+        }
+
+        /* 2, 5, or 8: Simple single-input commands */
+        function dashQuick(choice) {
+            const labels = {
+                '2': 'View All Expenses',
+                '5': 'Budget Report',
+                '8': 'Save & Exit'
+            };
+            sendSequence([choice], labels[choice] || 'Command', labels[choice]);
+        }
+
+        /* 5. Budget Report */
+        function dashBudgetReport() {
+            sendSequence(['5'], 'Budget Report', 'Loading budget report…');
+        }
+
+        /* ── Toast Notification ──────────────────────────── */
+        let toastTimer = null;
+        function showToast(msg, icon) {
+            toastEl.innerHTML = (icon || '✅') + '&nbsp;&nbsp;' + msg;
+            toastEl.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { toastEl.classList.remove('show'); }, 2500);
+        }
+
+        /* ── Emscripten Module Configuration ─────────────── */
+        var Module = {
+            print: function (text) {
+                appendOutput(text + '\n');
+            },
+
+            printErr: function (text) {
+                appendOutput('[ERR] ' + text + '\n');
+            },
+
+            onRuntimeInitialized: function () {
+                setReady();
+            }
+        };
+
+        /* ── Connect stdin/stdout/stderr to WASM FS ──────── */
+        Module['preRun'] = function () {
+            FS.init(
+                /* stdin: reads from stdinBuffer one char at a time */
+                function stdin() {
+                    if (stdinBuffer.length === 0) return null;
+                    return stdinBuffer.shift();
+                },
+
+                /* stdout: char-by-char → line-buffered output.
+                   Uses appendChar() which collects characters and
+                   flushes on newline or after 30ms idle. This
+                   prevents DOM thrashing and gives clean output. */
+                function stdout(c) {
+                    appendChar(String.fromCharCode(c));
+                },
+
+                /* stderr: same buffered treatment */
+                function stderr(c) {
+                    appendChar(String.fromCharCode(c));
+                }
+            );
+        };
+    </script>
+
+    <!--
+  IMPORTANT:
+  When compiled with em++ the generated index.js is injected here
+  automatically by Emscripten's --shell-file mechanism.
+  The placeholder below is replaced by em++:
+-->
+    <script async type="text/javascript" src="index.js"></script>
+
+</body>
+
+</html>
